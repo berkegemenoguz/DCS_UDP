@@ -1,7 +1,3 @@
-// =============================================
-//  GEREKLI KUTUPHANELER VE AYARLAR
-//  Winsock ve C++ standart kutuphaneleri
-// =============================================
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <algorithm>
 #include <cstring>
@@ -11,17 +7,13 @@
 #include <string>
 #include <winsock2.h>
 #include <ws2tcpip.h>
-
-
 #pragma comment(lib, "ws2_32.lib")
-
 using namespace std;
 
-// =============================================
-//  CONSTANTS
-//  Simulasyonun davranisini belirleyen temel sabitler
-//  MSS, Buffer boyutlari ve Zaman asimi ayarlari
-// =============================================
+// -------------------------------------------
+//  Constantlar
+// -------------------------------------------
+
 
 const int MSS = 100;
 const int HEADER_SIZE = 40;
@@ -37,11 +29,13 @@ const unsigned char PKT_TYPE_DATA = 0x01;
 const unsigned char PKT_TYPE_ACK = 0x02;
 const unsigned char PKT_TYPE_FIN = 0x03;
 
-// =============================================
-//  PACKET STRUCTURE
-//  Ag uzerinden gonderilecek veri paketinin yapisi
-//  Header (Baslik) + Data (Payload)
-// =============================================
+
+
+// -------------------------------------------
+//  Packet structure
+//  Header + Payload
+// -------------------------------------------
+
 
 #pragma pack(push, 1)
 struct Packet {
@@ -55,7 +49,6 @@ struct Packet {
   Packet() : type(0), seq_num(0), ack_num(0), win_size(0), data_len(0) {
     memset(data, 0, MSS);
   }
-
   static Packet createData(unsigned int seq, const char *payload,
                            unsigned short len) {
     Packet pkt;
@@ -65,7 +58,6 @@ struct Packet {
     memcpy(pkt.data, payload, pkt.data_len);
     return pkt;
   }
-
   static Packet createAck(unsigned int ack, unsigned short window) {
     Packet pkt;
     pkt.type = PKT_TYPE_ACK;
@@ -73,7 +65,6 @@ struct Packet {
     pkt.win_size = window;
     return pkt;
   }
-
   static Packet createFin(unsigned int seq) {
     Packet pkt;
     pkt.type = PKT_TYPE_FIN;
@@ -83,16 +74,16 @@ struct Packet {
 };
 #pragma pack(pop)
 
-// =============================================
-//  SIMULATION STATS
-//  Verimlilik analizleri icin metrikleri toplayan sinif
-// =============================================
+// -------------------------------------------
+//  Simülasyon verileri
+// -------------------------------------------
 
 class SimulationStats {
 public:
   long total_payload_sent = 0;
   long total_packets_sent = 0;
   long total_ack_packets = 0;
+
 
   void reset() {
     total_payload_sent = 0;
@@ -108,9 +99,9 @@ public:
                             ? ((double)total_payload_sent / total_traffic) * 100
                             : 0;
 
-    cout << "\n=============================================" << endl;
+    cout << "\n-------------------------------------------" << endl;
     cout << "   FINAL ANALYSE: " << scenario_name << endl;
-    cout << "=============================================" << endl;
+    cout << "-------------------------------------------" << endl;
     cout << "File size:                " << fileSize << " bytes" << endl;
     cout << "1. Transferred Data:     " << total_payload_sent << " bytes"
          << endl;
@@ -123,15 +114,18 @@ public:
     cout << "---------------------------------------------" << endl;
     cout << fixed << setprecision(2);
     cout << "Efficiency Score: %" << efficiency << endl;
-    cout << "=============================================\n" << endl;
+    cout << "-------------------------------------------\n" << endl;
   }
 };
 
-// =============================================
+
+
+
+// -------------------------------------------
 //  UDP SERVER - Receiver with Clark Algorithm
-//  Sunucu sinifi: Portu dinler, veriyi alir
-//  ve Clark algoritmasini uygular.
-// =============================================
+//  Portu dinler ve veriyi alir
+// -------------------------------------------
+
 
 class UDPServer {
 private:
@@ -173,8 +167,7 @@ public:
     }
 
     int timeout = PACKET_TIMEOUT_MS * 10;
-    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
-               sizeof(timeout));
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,sizeof(timeout));
 
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_addr.s_addr = INADDR_ANY;
@@ -192,11 +185,12 @@ public:
       return false;
     }
 
+
     cout << "Server listening on port " << SERVER_PORT << "..." << endl;
     cout << "Clark Algorithm: " << (useClark ? "ON" : "OFF") << endl;
     return true;
   }
-  // Sunucunun ana calisma dongusu: Paketleri bekler, isler ve yanitlar
+  //Paketleri bekler işler ve yanıtlar
   void run() {
     Packet packet;
     bool running = true;
@@ -233,8 +227,7 @@ public:
       }
     }
 
-    stats->print_report(useClark ? "Clark Enabled" : "Clark Disabled",
-                        totalBytesReceived);
+    stats->print_report(useClark ? "Clark Enabled" : "Clark Disabled",totalBytesReceived);
   }
   // Gelen veri paketini isler ve dosyaya yazar
 private:
@@ -251,7 +244,7 @@ private:
   void sendAck(unsigned int ackNum) {
     int availableWindow = maxBufferSize - currentBufferUsage;
 
-    // CLARK ALGORITHM
+    // Clark algoritması
     if (useClark && availableWindow < MSS) {
       availableWindow = 0;
       cout << "[CLARK] Window too small, advertising 0" << endl;
@@ -271,9 +264,8 @@ private:
   }
 };
 
-// =============================================
-//  MAIN FUNCTION
-// =============================================
+
+//  Main Func
 
 int main(int argc, char *argv[]) {
   bool useClark = false;
@@ -284,18 +276,17 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  cout << "=============================================" << endl;
+  cout << "-------------------------------------------" << endl;
   cout << "   UDP SERVER - Clark Algorithm Demo" << endl;
-  cout << "=============================================" << endl;
+  cout << "-------------------------------------------" << endl;
   cout << "DEBUG: sizeof(Packet) = " << sizeof(Packet) << " bytes" << endl;
   cout << "DEBUG: MSS = " << MSS << " bytes" << endl;
-
+  cout << "-------------------------------------------";
   WSADATA wsaData;
   if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
     cerr << "WSAStartup failed!" << endl;
     return 1;
   }
-
   SimulationStats stats;
   UDPServer server(useClark, &stats);
 
@@ -303,7 +294,6 @@ int main(int argc, char *argv[]) {
     WSACleanup();
     return 1;
   }
-
   server.run();
   WSACleanup();
   return 0;
