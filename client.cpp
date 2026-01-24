@@ -223,8 +223,7 @@ public:
 
         // Zero Window Probe: Server'i tetiklemek icin bos paket gonder
         Packet probe = Packet::createData(nextSeqNum, nullptr, 0);
-        sendto(sock, (char *)&probe, sizeof(Packet), 0, (sockaddr *)&serverAddr,
-               serverAddrLen);
+        sendto(sock, (char *)&probe, sizeof(Packet), 0, (sockaddr *)&serverAddr,serverAddrLen);
 
         waitForAck();
         if (currentWindow > 0)
